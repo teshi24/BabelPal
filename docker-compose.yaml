@@ -1,0 +1,20 @@
+version: "2.3"
+
+services:
+    # ROS - ROS Master (ros-pepper als ROS Master)
+    naoqi_driver:
+        build: ./naoqi_driver
+        network_mode: host
+        volumes:      
+        - /tmp/.X11-unix:/tmp/.X11-unix:rw
+        - ./naoqi_driver/src/pepper_nodes:/root/catkin_ws/src/pepper_nodes
+        environment:
+        - ROS_MASTER_URI=http://localhost:11311
+        - ROBOT_IP=192.168.1.104 # IP of the robot
+        - ROBOT_PORT=9559
+        - ROBOT_PASSWORD="i4-p2e3p"
+        - NETWORK_INTERFACE=docker0 # network interface of the docker container
+        - DISPLAY=$DISPLAY
+        command: /root/run.sh
+        tty: true
+
