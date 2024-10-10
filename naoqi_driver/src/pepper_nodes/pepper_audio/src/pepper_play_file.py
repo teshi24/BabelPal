@@ -14,7 +14,7 @@ class PlayAudioFileServer():
         rospy.init_node('play_audio_file_server')
         service = rospy.Service('pepper/play_audio_file', PlayAudioFile, self.play_callback)
         
-        self.robot_ip = rospy.get_param('~robot_ip', '192.168.1.104')
+        self.robot_ip = rospy.get_param('~robot_ip', '192.168.1.180')
         self.robot_psk = rospy.get_param('~robot_password', 'i4-p2e3p')
         self.robot_port = rospy.get_param('~robot_port', 9559)
         self.robot_username  = rospy.get_param('~robot_username', 'nao')
