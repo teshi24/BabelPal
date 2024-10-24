@@ -25,6 +25,45 @@ A few settings must be made for the setup to work correctly:
 5. The code in `/src/pepper_nodes` is shared with the container.
 6. Create your code inside the container within the folder `~/catkin_ws/src/pepper_nodes/`
 
+### How to generate a new package
+```shell
+cd ~/catkin_ws/src/pepper_nodes
+# replace pkg_name with your name; also, not clear whether all dependencies are required for each pkg
+catkin_create_pkg pepper_<pkg_name> std_msgs rospy roscpp message_generation
+cd pepper_<pkg_name>/src
+touch pepper_<pkg_name>_node.py
+chmod +x pepper_<pkg_name>_node.py
+cd ~/catkin_ws
+catkin_make
+source devel/setup.bash
+# das Pythonfile ist jetzt wie folgt ausführbar:
+rosrun pepper_<pkg_name> pepper_<pkg_name>_node.py
+```
+# todo: automatically register service at startup
+# todo: at the end, start service automatically when docker compose up was called
+### How to add a new service type to the pkg
+```shell
+cd ~/catkin_ws/src/pepper_nodes/pepper_<pkg_name>
+mkdir srv
+touch srv/<ServiceTyp>.srv
+```
+dann im `CMakeLists.txt` die Funktion wie folgt anpassen:
+```
+add_service_files(
+    FILES
+    <ServiceTyp>.srv
+)
+```
+danach via shell neu builden:
+```shell
+cd ~/catkin_ws
+catkin_make
+source devel/setup.bash
+# testen ob ersichtlich
+rossrv show pepper_<pkg_name>/<ServiceTyp>.srv
+```
+
+
 ### ROS environment
 
 The docker container uses the [naoqi_bridge](https://github.com/ros-naoqi/naoqi_bridge) and the [pepper_dcm_robot](https://github.com/ros-naoqi/pepper_dcm_robot) packages. Within the container, list the available topics with

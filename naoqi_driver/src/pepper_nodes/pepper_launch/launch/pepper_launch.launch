@@ -14,6 +14,6 @@
   
     <node pkg="pepper_audio" type="pepper_play_file.py" name="pepper_play_file" args="_robot_ip:=$(arg robot_ip) _robot_port:=$(arg robot_port) _robot_password:=$(arg robot_password) _robot_username:=$(arg robot_username)"/>
     <node pkg="pepper_speech" type="text_to_speech_node.py" name="pepper_speech" args="_robot_ip:=$(arg robot_ip) _robot_port:=$(arg robot_port)"  />
-    <node pkg="pepper_translate" type="translate.py" name="pepper_translate" args="_robot_ip:=$(arg robot_ip) _robot_port:=$(arg robot_port)"  />
+    <node pkg="pepper_translate" type="pepper_translate_node.py" name="pepper_translate" args="_robot_ip:=$(arg robot_ip) _robot_port:=$(arg robot_port)"  />
 </launch>
 
