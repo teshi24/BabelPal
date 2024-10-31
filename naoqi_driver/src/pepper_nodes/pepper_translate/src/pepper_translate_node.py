@@ -6,6 +6,7 @@ from naoqi import ALProxy
 
 
 class TranslationServer():
+
     def __init__(self):
         rospy.init_node('pepper_translate_server')
         service = rospy.Service('pepper_translate/pepper_translate', Translate, self.say_callback)
@@ -14,7 +15,6 @@ class TranslationServer():
         PORT = rospy.get_param('~pepper_port', 9559)
 
         self.tts = ALProxy("ALTextToSpeech", IP, PORT)
-        rospy.loginfo('hello')
         rospy.spin()
 
     def say_callback(self, req):
