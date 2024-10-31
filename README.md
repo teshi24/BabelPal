@@ -14,6 +14,7 @@ A few settings must be made for the setup to work correctly:
     | Robot Name | `ROBOT_IP` | `ROBOT_PASSWORD` |
     | --- | --- | --- |
     | Ale |   192.168.1.180 | i4-p2e3p | 
+    | Pale |   192.168.1.181 | i3-p2e3p | 
 
 
 ## Start-up
@@ -62,6 +63,10 @@ source devel/setup.bash
 # testen ob ersichtlich
 rossrv show pepper_<pkg_name>/<ServiceTyp>.srv
 ```
+
+### How to use a service
+1. run .py file to start the service if not already listed with `rosrun pepper_<pkg_name> pepper_<pkg_name>_node.py`
+2. call it with `rosservice call /pepper_<pkg_name>/pepper_<pkg_name>`
 
 
 ### ROS environment

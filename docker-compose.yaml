@@ -10,7 +10,7 @@ services:
         - ./naoqi_driver/src/pepper_nodes:/root/catkin_ws/src/pepper_nodes
         environment:
         - ROS_MASTER_URI=http://localhost:11311
-        - ROBOT_IP=192.168.1.180 # IP of the robot
+        - ROBOT_IP=192.168.1.181 # IP of the robot
         - ROBOT_PORT=9559
         - ROBOT_PASSWORD="i4-p2e3p"
         - NETWORK_INTERFACE=docker0 # network interface of the docker container
