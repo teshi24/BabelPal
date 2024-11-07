@@ -1,0 +1,6 @@
+numpy
+Flask~=3.0.3
+google-cloud-speech
+google-cloud-translate
+logging
+pyaudio
