@@ -3,6 +3,7 @@
 import rospy
 from pepper_translate.srv import Translate
 from naoqi import ALProxy
+from motion import Motion
 
 
 class TranslationServer():
@@ -15,17 +16,12 @@ class TranslationServer():
         PORT = rospy.get_param('~pepper_port', 9559)
 
         self.tts = ALProxy("ALTextToSpeech", IP, PORT)
+        self.motion = Motion()
         rospy.spin()
 
     def say_callback(self, req):
+        self.motion.nod()
         self.tts.say(req.message)
-        rospy.init_node('robo_tutorial_node')
-        rospy.loginfo("robo_tutorial_node started!")
-
-        try:
-            rospy.spin()
-        except KeyboardInterrupt:
-            pass
 
         rospy.loginfo("finsihed!")
         return True
