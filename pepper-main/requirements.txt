@@ -1,0 +1,4 @@
+paramiko~=2.9.2
+setuptools~=44.1.1
+sockets~=1.0.0
+enum
