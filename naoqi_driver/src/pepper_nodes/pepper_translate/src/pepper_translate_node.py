@@ -20,7 +20,9 @@ class TranslationServer():
         rospy.spin()
 
     def say_callback(self, req):
+        
         self.motion.nod()
+        
         self.tts.say(req.message)
 
         rospy.loginfo("finsihed!")
