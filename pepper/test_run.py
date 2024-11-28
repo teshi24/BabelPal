@@ -1,6 +1,6 @@
-from pepper_robots import PepperConfiguration, Robot, PepperNames
+from pepper_robots import PepperConfiguration, Robot
 
-config = PepperConfiguration(PepperNames.Pale)
+config = PepperConfiguration("Pale")
 pepper = Robot(config)
 
 tts = pepper.ALAnimatedSpeech  # text to speech service

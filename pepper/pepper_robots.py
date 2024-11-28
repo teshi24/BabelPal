@@ -107,7 +107,7 @@ class PepperConfiguration(object):
         #    self.Ip = "192.168.1.101"
         #    self.Password = "i1-p2e3p"
         if "Pale" in str(name):
-            self.Ip = "192.168.1.103"
+            self.Ip = "192.168.1.181"
             self.Password = "i3-p2e3p"
         elif "Ale" in str(name):
             self.Ip = "192.168.1.104"
