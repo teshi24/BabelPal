@@ -13,6 +13,7 @@ class ReactToTouch(object):
     """
     def __init__(self, app):
         super(ReactToTouch, self).__init__()
+        self.listing = False
 
         # Get the services ALMemory, ALTextToSpeech.
         app.start()
@@ -23,43 +24,33 @@ class ReactToTouch(object):
         self.touch = self.memory_service.subscriber("TouchChanged")
         self.id = self.touch.signal.connect(functools.partial(self.onTouched, "TouchChanged"))
 
+    ## todo: use proper version from main somehow
     def onTouched(self, strVarName, value):
-        """ This will be called each time a touch
-        is detected.
-
-        """
         # Disconnect to the event when talking,
         # to avoid repetitions
         self.touch.signal.disconnect(self.id)
 
-        touched_bodies = []
-        for p in value:
-            if p[1]:
-                touched_bodies.append(p[0])
+        listening = ""
+        for sensor in value:
+            sensor_name = sensor[0]
+            state = sensor[1]
+            if sensor_name.startswith("Head"):
+                if state:
+                    self.listing = not self.listing
+                    listening_string = ''
+                    if not self.listing:
+                        listening_string = 'not '
+                    listening = 'I am ' + listening_string + 'listening.'
+                break
 
-        self.say(touched_bodies)
+        self.say(listening)
 
-        # Reconnect again to the event
+        ## Reconnect again to the event
+        # todo: check if it works when one sais short sentences, could take to long
         self.id = self.touch.signal.connect(functools.partial(self.onTouched, "TouchChanged"))
 
-    def say(self, bodies):
-        if (bodies == []):
-            return
-
-        sentence = "My " + bodies[0]
-
-        for b in bodies[1:]:
-            sentence = sentence + " and my " + b
-
-        if (len(bodies) > 1):
-            sentence = sentence + " are"
-        else:
-            sentence = sentence + " is"
-        sentence = sentence + " touched."
-
+    def say(self, sentence):
         self.tts.say(sentence)
-        print(sentence)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
