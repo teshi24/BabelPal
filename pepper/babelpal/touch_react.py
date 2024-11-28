@@ -6,6 +6,7 @@ import qi
 import argparse
 import functools
 import sys
+import six.moves
 
 class ReactToTouch(object):
     """ A simple module able to react
@@ -40,10 +41,19 @@ class ReactToTouch(object):
                     listening_string = ''
                     if not self.listing:
                         listening_string = 'not '
+                        URL_STOP = "http://192.168.122.1:8080/stop?language=en"
+                        result = six.moves.urllib.request.urlopen(URL_STOP)
+                        text = result.read()
+                        print(text)
+                        self.say(text)
+                    else:
+                        URL_START = "http://192.168.122.1:8080/start?language=de"
+                        result = six.moves.urllib.request.urlopen(URL_START)
+                        print(result.read())
                     listening = 'I am ' + listening_string + 'listening.'
                 break
 
-        self.say(listening)
+        # self.say(listening)
 
         ## Reconnect again to the event
         # todo: check if it works when one sais short sentences, could take to long
