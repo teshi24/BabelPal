@@ -5,6 +5,7 @@ This Docker container is the ROS connection for the Pepper robot.
 - Virtual Machine or native Ubuntu 22.04
 - VS Code with Docker and Remote Dev Extensions
 - Docker engine
+- `pepper/babelpal/.env` file with TRANSLATION_SERVICE_AVAILABLE=False / True
 
 ## Settings
 A few settings must be made for the setup to work correctly:
