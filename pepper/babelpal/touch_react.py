@@ -1,29 +1,24 @@
 # -*- encoding: UTF-8 -*-
-
-"""Example: Say `My {Body_part} is touched` when receiving a touch event"""
-
-import qi
-import argparse
 import functools
-import sys
-import six.moves
+
+from pepper.babelpal.translation import TranslationFactory
+from pepper.pepper_robots import PepperConfiguration, Robot
+
 
 class ReactToTouch(object):
     """ A simple module able to react
         to touch events.
     """
-    def __init__(self, app):
+    def __init__(self, robot):
         super(ReactToTouch, self).__init__()
         self.listing = False
 
-        # Get the services ALMemory, ALTextToSpeech.
-        app.start()
-        session = app.session
-        self.memory_service = session.service("ALMemory")
-        self.tts = session.service("ALTextToSpeech")
-        # Connect to an Naoqi1 Event.
+        self.memory_service = robot.ALMemory
+        self.tts = robot.ALTextToSpeech
         self.touch = self.memory_service.subscriber("TouchChanged")
         self.id = self.touch.signal.connect(functools.partial(self.onTouched, "TouchChanged"))
+
+        self.translator = TranslationFactory.get_translation_service()
 
     ## todo: use proper version from main somehow
     def onTouched(self, strVarName, value):
@@ -31,29 +26,18 @@ class ReactToTouch(object):
         # to avoid repetitions
         self.touch.signal.disconnect(self.id)
 
-        listening = ""
         for sensor in value:
             sensor_name = sensor[0]
             state = sensor[1]
             if sensor_name.startswith("Head"):
                 if state:
                     self.listing = not self.listing
-                    listening_string = ''
-                    if not self.listing:
-                        listening_string = 'not '
-                        URL_STOP = "http://192.168.122.1:8080/stop?language=en"
-                        result = six.moves.urllib.request.urlopen(URL_STOP)
-                        text = result.read()
-                        print(text)
-                        self.say(text)
+                    if self.listing:
+                        self.translator.listen()
                     else:
-                        URL_START = "http://192.168.122.1:8080/start?language=de"
-                        result = six.moves.urllib.request.urlopen(URL_START)
-                        print(result.read())
-                    listening = 'I am ' + listening_string + 'listening.'
+                        text = self.translator.translate()
+                        self.say(text)
                 break
-
-        # self.say(listening)
 
         ## Reconnect again to the event
         # todo: check if it works when one sais short sentences, could take to long
@@ -63,20 +47,8 @@ class ReactToTouch(object):
         self.tts.say(sentence)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--ip", type=str, default="192.168.1.181",
-                        help="Robot IP address. On robot or Local Naoqi: use '192.168.1.181'.")
-    parser.add_argument("--port", type=int, default=9559,
-                        help="Naoqi port number")
+    config = PepperConfiguration("Pale")
+    pepper = Robot(config)
 
-    args = parser.parse_args()
-    try:
-        # Initialize qi framework.
-        connection_url = "tcp://" + args.ip + ":" + str(args.port)
-        app = qi.Application(["ReactToTouch", "--qi-url=" + connection_url])
-    except RuntimeError:
-        print ("Can't connect to Naoqi at ip \"" + args.ip + "\" on port " + str(args.port) +".\n"
-               "Please check your script arguments. Run with -h option for help.")
-        sys.exit(1)
-    react_to_touch = ReactToTouch(app)
-    app.run()
+    ReactToTouch(pepper)
+    pepper.app.run()
