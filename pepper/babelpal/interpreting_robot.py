@@ -139,6 +139,17 @@ class Robot(object):
         self.app.start()
         self.session = self.app.session
 
+        self.__init_pepper_services__()
+        if self.ALAutonomousLife.getState() != "disabled":
+            self.ALAutonomousLife.setState("disabled")
+        self.ALRobotPosture.goToPosture("StandInit", 0.5)
+
+        self.translator = TranslationFactory.get_translation_service()
+        self.__is_listening_lock__ = threading.Lock()
+        self.__is_listening__ = False
+        self.__init_nod_values__()
+
+    def __init_pepper_services__(self):
         self.ALAnimatedSpeech = ALAnimatedSpeech(self.session)
         self.ALAudioDevice = ALAudioDevice(self.session)
         self.ALAudioPlayer = ALAudioPlayer(self.session)
@@ -223,13 +234,12 @@ class Robot(object):
         self.ALVisionToolbox = ALVisionToolbox(self.session)
         self.DCM = DCM(self.session)
 
-        if self.ALAutonomousLife.getState() != "disabled":
-            self.ALAutonomousLife.setState("disabled")
-        self.ALRobotPosture.goToPosture("StandInit", 0.5)
-
-        self.translator = TranslationFactory.get_translation_service()
-        self.__is_listening_lock__ = threading.Lock()
-        self.__is_listening__ = False
+    def __init_nod_values__(self):
+        self.angle_absolute = True
+        self.nod_angle_bottom = .2
+        self.nod_angle_top = 0.
+        self.nod_duration = .5
+        self.nod_names = "HeadPitch"
 
     def get_is_listening_thread_save(self):
         with self.__is_listening_lock__:
@@ -242,21 +252,11 @@ class Robot(object):
 
     def listen(self):
         self.translator.listen()
-        self.nod_thread = threading.Thread(target=self.nod)
-        self.nod_thread.start()
+        threading.Thread(target=self._nod).start()
         # without it, this function exits to fast, touch has issues
         time.sleep(1)
 
-    def translate(self):
-        text = self.translator.translate()
-        self.ALTextToSpeech.say(text)
-
-    def nod(self):
-        angle_absolute = True
-        angle_bottom = .2
-        angle_top = 0.
-        duration = .5
-        names = "HeadPitch"
+    def _nod(self):
         # todo: unsure if this needs to be done here or can be done somewhere else
         self.ALMotion.setStiffnesses("Head", 1.0)
         self.ALMotion.setIdlePostureEnabled('Body', False)
@@ -265,9 +265,180 @@ class Robot(object):
         time.sleep(3)
         while self.get_is_listening_thread_save():
             time.sleep(random.randint(1, 3))
-            self.ALMotion.angleInterpolation(names, angle_bottom, duration, angle_absolute)
-            self.ALMotion.angleInterpolation(names, angle_top, duration, angle_absolute)
+            self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_bottom, self.nod_duration, self.angle_absolute)
+            self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_top, self.nod_duration, self.angle_absolute)
+
+    def translate(self):
+        # todo: check how this is with the url service
+        text = self.translator.translate()
+        # more natural when the robot waits shortly
+        time.sleep(2)
+        self.ALTextToSpeech.say(text)
 
     def start_interpreting(self):
-        ListenOnHeadTouch(self, self.listen, self.translate)
+        ListenOnHeadTouch(self.ALMemory,
+                          self.toggle_is_listening_thread_save,
+                          self.listen,
+                          self.translate)
 
+
+
+
+# how would you refactor this code to make it more readable?
+#
+#
+# main.py
+# from interpreting_robot import PepperConfiguration, Robot
+#
+# config = PepperConfiguration("Pale")
+# pepper = Robot(config)
+# pepper.start_interpreting()
+# pepper.app.run()
+#
+# interpreting_robot.py
+# PepperConfiguration()
+# # some stuff
+#
+# class Robot(object):
+#
+#     def __init__(self, configuration):
+#         self.configuration = configuration
+#         self.connection_url = "tcp://" + configuration.IpPort
+#         self.app = qi.Application(["OurProject", "--qi-url=" + self.connection_url])
+#         self.app.start()
+#         self.session = self.app.session
+# # adding all required services ...
+#
+#         self.ALAnimatedSpeech = ALAnimatedSpeech(self.session)
+#         self.ALAutonomousLife = ALAutonomousLife(self.session)
+#         self.ALMemory = ALMemory(self.session)
+#         self.ALMotion = ALMotion(self.session)
+#         if self.ALAutonomousLife.getState() != "disabled":
+#             self.ALAutonomousLife.setState("disabled")
+#         self.ALRobotPosture.goToPosture("StandInit", 0.5)
+#
+#         self.translator = TranslationFactory.get_translation_service()
+#         self.__is_listening_lock__ = threading.Lock()
+#         self.__is_listening__ = False
+#
+#     def get_is_listening_thread_save(self):
+#         with self.__is_listening_lock__:
+#             return self.__is_listening__
+#
+#     def toggle_is_listening_thread_save(self):
+#         with self.__is_listening_lock__:
+#             self.__is_listening__ = not self.__is_listening__
+#             return self.__is_listening__
+#
+#     def listen(self):
+#         self.translator.listen()
+#         self.nod_thread = threading.Thread(target=self.nod)
+#         self.nod_thread.start()
+#         # without it, this function exits to fast, touch has issues
+#         time.sleep(1)
+#
+#     def translate(self):
+#         text = self.translator.translate()
+#         self.ALTextToSpeech.say(text)
+#
+#     def nod(self):
+#         self.angle_absolute = True
+#         self.nod_angle_bottom = .2
+#         self.nod_angle_top = 0.
+#         self.nod_duration = .5
+#         self.nod_names = "HeadPitch"
+#         # todo: unsure if this needs to be done here or can be done somewhere else
+#         self.ALMotion.setStiffnesses("Head", 1.0)
+#         self.ALMotion.setIdlePostureEnabled('Body', False)
+#         self.ALMotion.setIdlePostureEnabled('Head', False)
+#         # wait a bit with nodding, to not nod before the person started talking
+#         time.sleep(3)
+#         while self.get_is_listening_thread_save():
+#             time.sleep(random.randint(1, 3))
+#             self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_bottom, self.nod_duration, self.angle_absolute)
+#             self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_top, self.nod_duration, self.angle_absolute)
+#
+#     def start_interpreting(self):
+#         ListenOnHeadTouch(self, self.listen, self.translate)
+#
+# translation.py
+# load_dotenv('.env')
+#
+#
+# class TranslationInterface(object):
+#     @abstractmethod
+#     def listen(self):
+#         pass
+#     @abstractmethod
+#     def translate(self):
+#         pass
+#
+# class TranslationFactory(object):
+#     @staticmethod
+#     def get_translation_service():
+#         if os.getenv("TRANSLATION_SERVICE_AVAILABLE") == "True":
+#             return Translation()
+#         else:
+#             return TranslationMock()
+#
+#
+# class Translation(TranslationInterface):
+#     def listen(self):
+#         URL_START = "http://192.168.122.1:8080/start?language=de"
+#         result = six.moves.urllib.request.urlopen(URL_START)
+#         print(result.read())
+#
+#     def translate(self):
+#         URL_STOP = "http://192.168.122.1:8080/stop?language=en"
+#         result = six.moves.urllib.request.urlopen(URL_STOP)
+#         text = result.read()
+#         print(text)
+#         return text
+#
+#
+# class TranslationMock(TranslationInterface):
+#     def listen(self):
+#         print("TranslationMock: listening started!")
+#
+#     def translate(self):
+#         return "TranslationMock: I am translating now."
+#
+#
+#
+# listen_on_head_touch.py
+# class ListenOnHeadTouch(object):
+#     """ Listens on HeadTouch - first touch triggers on_listen, second touch on_stop
+#     """
+#     def __init__(self, robot, on_listen, on_stop):
+#         super(ListenOnHeadTouch, self).__init__()
+#         self.on_listen = on_listen
+#         self.on_stop = on_stop
+#         self.robot = robot
+#
+#         self.memory_service = robot.ALMemory
+#         self.touch = self.memory_service.subscriber("TouchChanged")
+#         self.id = self.touch.signal.connect(functools.partial(self.onTouched, "TouchChanged"))
+#
+#     def onTouched(self, strVarName, value):
+#         # Disconnect to the event when talking,
+#         # to avoid repetitions
+#         self.touch.signal.disconnect(self.id)
+#
+#         for sensor in value:
+#             sensor_name = sensor[0]
+#             state = sensor[1]
+#             if sensor_name.startswith("Head"):
+#                 print(sensor_name)
+#                 if state:
+#                     print(state)
+#                     robot_is_listening = self.robot.toggle_is_listening_thread_save()
+#                     if robot_is_listening:
+#                         self.on_listen()
+#                         print("listening started")
+#                     else:
+#                         self.on_stop()
+#                         print("listening stopped")
+#                 break
+#
+#         ## Reconnect again to the event
+#         self.id = self.touch.signal.connect(functools.partial(self.onTouched, "TouchChanged"))

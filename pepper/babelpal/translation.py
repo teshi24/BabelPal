@@ -27,13 +27,15 @@ class TranslationFactory(object):
 
 
 class Translation(TranslationInterface):
+    def __init__(self):
+        self.BASE_URL = "http://192.168.122.1:8080/"
     def listen(self):
-        URL_START = "http://192.168.122.1:8080/start?language=de"
+        URL_START = self.BASE_URL + "start?language=de"
         result = six.moves.urllib.request.urlopen(URL_START)
         print(result.read())
 
     def translate(self):
-        URL_STOP = "http://192.168.122.1:8080/stop?language=en"
+        URL_STOP = self.BASE_URL + "stop?language=en"
         result = six.moves.urllib.request.urlopen(URL_STOP)
         text = result.read()
         print(text)
