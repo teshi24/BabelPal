@@ -2,6 +2,7 @@
 import random
 import threading
 import time
+import math
 
 from naoqi import qi
 
@@ -241,8 +242,8 @@ class Robot(object):
 
     def __init_nod_values__(self):
         self.angle_absolute = True
-        self.nod_angle_bottom = .2
-        self.nod_angle_top = 0.
+        self.nod_angle_bottom = -0.1
+        self.nod_angle_top = -0.3
         self.nod_duration = .5
         self.nod_names = "HeadPitch"
 
@@ -257,19 +258,107 @@ class Robot(object):
 
     def listen(self):
         self.translator.listen()
-        threading.Thread(target=self._nod).start()
+        threading.Thread(target=self._head_listening_movement).start()
         # without it, this function exits to fast, touch has issues
         time.sleep(1)
 
-    def _nod(self):
-        # todo: unsure if this needs to be done here or can be done somewhere else
+    def _head_listening_movement(self):
         self.ALMotion.setStiffnesses("Head", 1.0)
         self.ALMotion.setIdlePostureEnabled('Body', False)
         self.ALMotion.setIdlePostureEnabled('Head', False)
-        # wait a bit with nodding, to not nod before the person started talking
-        time.sleep(3)
+
+        self._look_at_speaker()
+        self._nod()
+
+    def _look_at_speaker(self):
+        print('looking at speaker started')
+        self.ALSoundLocalization.subscribe2("SoundLocalization")
+
+        """Make Pepper look and slightly turn towards the person speaking."""
         while self.get_is_listening_thread_save():
-            time.sleep(random.randint(1, 3))
+            direction = self._get_sound_direction()
+            print(direction)
+            if direction:
+                print('entered here')
+                azimuth, elevation = direction  # Get azimuth (angle in radians)
+                # Convert the azimuth to a range that Pepper's head can handle
+                self._turn_head_towards(azimuth, elevation)
+                break
+
+            time.sleep(1)  # Check every second
+
+        """Stop sound localization when done."""
+        self.ALSoundLocalization.unsubscribe("SoundLocalization")
+
+    def _get_sound_direction(self):
+        """Get the sound direction from ALSoundLocalization."""
+        try:
+            data = self.ALMemory.getData("ALSoundLocalization/SoundLocated")
+            print(data)
+            if data:
+                azimuth, elevation, confidence, energy = data[1]
+                print(str(confidence) + " (conf), " + str(energy) + " (energy)")
+                if confidence > 0.35 and energy > 0.1:  # Set a threshold for intensity
+                    return [azimuth, elevation]
+                else:
+                    return None
+            else:
+                return None
+        except Exception as e:
+            print("Error getting sound location:", e)
+            return None
+
+    def _get_current_azimuth(self):
+        """Get the current azimuth (yaw) angle of Pepper's head."""
+        try:
+            # Get the current angles of the head (yaw and pitch)
+            head_angles = self.ALMotion.getAngles("Head", True)
+            # head_angles[0] corresponds to the yaw (azimuth) angle
+            print(head_angles)
+            azimuth = head_angles[0]
+            return azimuth
+        except Exception as e:
+            print("Error getting current azimuth:", e)
+            return None
+
+    def look_in_opposite_direction(self):
+        """Make Pepper look in the opposite direction (180 degrees from current yaw)."""
+        current_azimuth = self._get_current_azimuth()
+
+        if current_azimuth is not None:
+            opposite_azimuth = current_azimuth * -2
+            self._turn_head_towards(opposite_azimuth, 0)
+        else:
+            print("Unable to retrieve current azimuth.")
+
+    def _turn_head_towards(self, azimuth, elevation):
+        """Turn Pepper's head towards the given azimuth and elevation."""
+        if azimuth is None or elevation is None:
+            return
+
+        head_name = "Head"
+        duration = 1
+
+        # Limit the azimuth (yaw) to a safe range for horizontal rotation
+        if azimuth > 1:  # Maximum right rotation
+            azimuth = 1
+        elif azimuth < -1:  # Maximum left rotation
+            azimuth = -1
+
+        # Limit the elevation (pitch) to a safe range for vertical rotation
+        elevation = elevation - 0.1
+        if elevation > -0.1:  # Maximum downward rotation
+            elevation = -0.1
+        elif elevation < -0.5:  # Maximum upwards rotation
+            elevation = -0.5
+
+        # Perform the movement: first yaw (horizontal), then pitch (vertical)
+        self.ALMotion.angleInterpolationWithSpeed(head_name, [azimuth, elevation], duration)
+
+    def _nod(self):
+        # todo: unsure if this needs to be done here or can be done somewhere else
+        while self.get_is_listening_thread_save():
+            time.sleep(random.randint(2, 4))
             self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_bottom, self.nod_duration, self.angle_absolute)
             self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_top, self.nod_duration, self.angle_absolute)
 
@@ -278,6 +367,7 @@ class Robot(object):
         text = self.translator.translate()
         # more natural when the robot waits shortly
         time.sleep(2)
+        self.look_in_opposite_direction()
         self.ALAnimatedSpeech.say2(text, self.config_contextual_speech)
         self.__init_pos__()
 
@@ -287,164 +377,3 @@ class Robot(object):
                           self.listen,
                           self.translate)
 
-
-
-
-# how would you refactor this code to make it more readable?
-#
-#
-# main.py
-# from interpreting_robot import PepperConfiguration, Robot
-#
-# config = PepperConfiguration("Pale")
-# pepper = Robot(config)
-# pepper.start_interpreting()
-# pepper.app.run()
-#
-# interpreting_robot.py
-# PepperConfiguration()
-# # some stuff
-#
-# class Robot(object):
-#
-#     def __init__(self, configuration):
-#         self.configuration = configuration
-#         self.connection_url = "tcp://" + configuration.IpPort
-#         self.app = qi.Application(["OurProject", "--qi-url=" + self.connection_url])
-#         self.app.start()
-#         self.session = self.app.session
-# # adding all required services ...
-#
-#         self.ALAnimatedSpeech = ALAnimatedSpeech(self.session)
-#         self.ALAutonomousLife = ALAutonomousLife(self.session)
-#         self.ALMemory = ALMemory(self.session)
-#         self.ALMotion = ALMotion(self.session)
-#         if self.ALAutonomousLife.getState() != "disabled":
-#             self.ALAutonomousLife.setState("disabled")
-#         self.ALRobotPosture.goToPosture("StandInit", 0.5)
-#
-#         self.translator = TranslationFactory.get_translation_service()
-#         self.__is_listening_lock__ = threading.Lock()
-#         self.__is_listening__ = False
-#
-#     def get_is_listening_thread_save(self):
-#         with self.__is_listening_lock__:
-#             return self.__is_listening__
-#
-#     def toggle_is_listening_thread_save(self):
-#         with self.__is_listening_lock__:
-#             self.__is_listening__ = not self.__is_listening__
-#             return self.__is_listening__
-#
-#     def listen(self):
-#         self.translator.listen()
-#         self.nod_thread = threading.Thread(target=self.nod)
-#         self.nod_thread.start()
-#         # without it, this function exits to fast, touch has issues
-#         time.sleep(1)
-#
-#     def translate(self):
-#         text = self.translator.translate()
-#         self.ALTextToSpeech.say(text)
-#
-#     def nod(self):
-#         self.angle_absolute = True
-#         self.nod_angle_bottom = .2
-#         self.nod_angle_top = 0.
-#         self.nod_duration = .5
-#         self.nod_names = "HeadPitch"
-#         # todo: unsure if this needs to be done here or can be done somewhere else
-#         self.ALMotion.setStiffnesses("Head", 1.0)
-#         self.ALMotion.setIdlePostureEnabled('Body', False)
-#         self.ALMotion.setIdlePostureEnabled('Head', False)
-#         # wait a bit with nodding, to not nod before the person started talking
-#         time.sleep(3)
-#         while self.get_is_listening_thread_save():
-#             time.sleep(random.randint(1, 3))
-#             self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_bottom, self.nod_duration, self.angle_absolute)
-#             self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_top, self.nod_duration, self.angle_absolute)
-#
-#     def start_interpreting(self):
-#         ListenOnHeadTouch(self, self.listen, self.translate)
-#
-# translation.py
-# load_dotenv('.env')
-#
-#
-# class TranslationInterface(object):
-#     @abstractmethod
-#     def listen(self):
-#         pass
-#     @abstractmethod
-#     def translate(self):
-#         pass
-#
-# class TranslationFactory(object):
-#     @staticmethod
-#     def get_translation_service():
-#         if os.getenv("TRANSLATION_SERVICE_AVAILABLE") == "True":
-#             return Translation()
-#         else:
-#             return TranslationMock()
-#
-#
-# class Translation(TranslationInterface):
-#     def listen(self):
-#         URL_START = "http://192.168.122.1:8080/start?language=de"
-#         result = six.moves.urllib.request.urlopen(URL_START)
-#         print(result.read())
-#
-#     def translate(self):
-#         URL_STOP = "http://192.168.122.1:8080/stop?language=en"
-#         result = six.moves.urllib.request.urlopen(URL_STOP)
-#         text = result.read()
-#         print(text)
-#         return text
-#
-#
-# class TranslationMock(TranslationInterface):
-#     def listen(self):
-#         print("TranslationMock: listening started!")
-#
-#     def translate(self):
-#         return "TranslationMock: I am translating now."
-#
-#
-#
-# listen_on_head_touch.py
-# class ListenOnHeadTouch(object):
-#     """ Listens on HeadTouch - first touch triggers on_listen, second touch on_stop
-#     """
-#     def __init__(self, robot, on_listen, on_stop):
-#         super(ListenOnHeadTouch, self).__init__()
-#         self.on_listen = on_listen
-#         self.on_stop = on_stop
-#         self.robot = robot
-#
-#         self.memory_service = robot.ALMemory
-#         self.touch = self.memory_service.subscriber("TouchChanged")
-#         self.id = self.touch.signal.connect(functools.partial(self.onTouched, "TouchChanged"))
-#
-#     def onTouched(self, strVarName, value):
-#         # Disconnect to the event when talking,
-#         # to avoid repetitions
-#         self.touch.signal.disconnect(self.id)
-#
-#         for sensor in value:
-#             sensor_name = sensor[0]
-#             state = sensor[1]
-#             if sensor_name.startswith("Head"):
-#                 print(sensor_name)
-#                 if state:
-#                     print(state)
-#                     robot_is_listening = self.robot.toggle_is_listening_thread_save()
-#                     if robot_is_listening:
-#                         self.on_listen()
-#                         print("listening started")
-#                     else:
-#                         self.on_stop()
-#                         print("listening stopped")
-#                 break
-#
-#         ## Reconnect again to the event
-#         self.id = self.touch.signal.connect(functools.partial(self.onTouched, "TouchChanged"))
