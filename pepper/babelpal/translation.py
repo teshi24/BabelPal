@@ -5,9 +5,7 @@ from abc import abstractmethod
 import six.moves
 
 from babelpal.env import load_dotenv
-from robot import PepperConfiguration, Robot
 
-# Load .env file
 load_dotenv('.env')
 
 
@@ -50,6 +48,8 @@ class TranslationMock(TranslationInterface):
         return "TranslationMock: I am translating now."
 
 if __name__ == "__main__":
+    from robot import PepperConfiguration, Robot
+
     translator = TranslationFactory.get_translation_service()
 
     config = PepperConfiguration("Pale")
