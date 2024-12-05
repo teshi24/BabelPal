@@ -2,7 +2,7 @@ import threading
 import time
 from http import HTTPStatus
 
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, request
 
 from speech.speech_to_text import SpeechToText
 from speech.translation import translate_text
@@ -20,7 +20,9 @@ def start_speech():
     """
     Starts the stream to get text from the microphone
     """
-    listening = threading.Thread(target=speechToText.start)
+    print("start sent")
+    language = request.args.get('language')
+    listening = threading.Thread(target=speechToText.start, args=(language,))
     listening.start()
     return jsonify('Start Received'), HTTPStatus.OK
 
@@ -33,8 +35,17 @@ def stop_speech():
     Returns:
         - The recognized text in the language requested
     """
+    print("stop sent")
+    language = request.args.get('language')
     while speechToText.transcribing is True:
         time.sleep(0.2)
     text_input = speechToText.stop()
-    text_output = translate_text("en", text_input)
+    text_output = translate_text(language, text_input)
     return jsonify(text_output["translatedText"]), HTTPStatus.OK
+
+
+
+@app.route('/test', methods=['GET'])
+def test():
+
+    return jsonify("test"), HTTPStatus.OK
