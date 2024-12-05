@@ -6,9 +6,9 @@ class ListenOnHeadTouch(object):
     """
     def __init__(self, robot, on_listen, on_stop):
         super(ListenOnHeadTouch, self).__init__()
-        self.listing = False
         self.on_listen = on_listen
         self.on_stop = on_stop
+        self.robot = robot
 
         self.memory_service = robot.ALMemory
         self.touch = self.memory_service.subscriber("TouchChanged")
@@ -26,8 +26,8 @@ class ListenOnHeadTouch(object):
                 print(sensor_name)
                 if state:
                     print(state)
-                    self.listing = not self.listing
-                    if self.listing:
+                    robot_is_listening = self.robot.toggle_is_listening_thread_save()
+                    if robot_is_listening:
                         self.on_listen()
                         print("listening started")
                     else:

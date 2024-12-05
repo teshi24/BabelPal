@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+import random
+import threading
+import time
+
 from naoqi import qi
 
 from babelpal.listen_on_head_touch import ListenOnHeadTouch
@@ -224,14 +228,45 @@ class Robot(object):
         self.ALRobotPosture.goToPosture("StandInit", 0.5)
 
         self.translator = TranslationFactory.get_translation_service()
+        self.__is_listening_lock__ = threading.Lock()
+        self.__is_listening__ = False
+
+    def get_is_listening_thread_save(self):
+        with self.__is_listening_lock__:
+            return self.__is_listening__
+
+    def toggle_is_listening_thread_save(self):
+        with self.__is_listening_lock__:
+            self.__is_listening__ = not self.__is_listening__
+            return self.__is_listening__
 
     def listen(self):
         self.translator.listen()
+        self.nod_thread = threading.Thread(target=self.nod)
+        self.nod_thread.start()
+        # without it, this function exits to fast, touch has issues
+        time.sleep(1)
 
     def translate(self):
-        print("Stopped listening!")
         text = self.translator.translate()
         self.ALTextToSpeech.say(text)
+
+    def nod(self):
+        angle_absolute = True
+        angle_bottom = .2
+        angle_top = 0.
+        duration = .5
+        names = "HeadPitch"
+        # todo: unsure if this needs to be done here or can be done somewhere else
+        self.ALMotion.setStiffnesses("Head", 1.0)
+        self.ALMotion.setIdlePostureEnabled('Body', False)
+        self.ALMotion.setIdlePostureEnabled('Head', False)
+        # wait a bit with nodding, to not nod before the person started talking
+        time.sleep(3)
+        while self.get_is_listening_thread_save():
+            time.sleep(random.randint(1, 3))
+            self.ALMotion.angleInterpolation(names, angle_bottom, duration, angle_absolute)
+            self.ALMotion.angleInterpolation(names, angle_top, duration, angle_absolute)
 
     def start_interpreting(self):
         ListenOnHeadTouch(self, self.listen, self.translate)
