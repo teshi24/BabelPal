@@ -1,7 +1,6 @@
-#from pepper_robots import PepperConfiguration, Robot
 from babelpal.listen_on_head_touch import ListenOnHeadTouch
 from babelpal.translation import TranslationFactory
-from pepper_robots import PepperConfiguration, Robot
+from robot import PepperConfiguration, Robot
 
 config = PepperConfiguration("Pale")
 pepper = Robot(config)

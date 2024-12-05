@@ -5,7 +5,7 @@ from abc import abstractmethod
 import six.moves
 
 from babelpal.env import load_dotenv
-from pepper_robots import PepperConfiguration, Robot
+from robot import PepperConfiguration, Robot
 
 # Load .env file
 load_dotenv('.env')

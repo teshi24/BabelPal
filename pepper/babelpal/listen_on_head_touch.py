@@ -1,6 +1,6 @@
 # -*- encoding: UTF-8 -*-
 import functools
-from pepper_robots import PepperConfiguration, Robot
+from robot import PepperConfiguration, Robot
 
 
 class ListenOnHeadTouch(object):
