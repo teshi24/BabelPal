@@ -142,12 +142,17 @@ class Robot(object):
         self.__init_pepper_services__()
         if self.ALAutonomousLife.getState() != "disabled":
             self.ALAutonomousLife.setState("disabled")
-        self.ALRobotPosture.goToPosture("StandInit", 0.5)
+        self.__init_pos__()
 
         self.translator = TranslationFactory.get_translation_service()
         self.__is_listening_lock__ = threading.Lock()
         self.__is_listening__ = False
+        self.config_contextual_speech = {"bodyLanguageMode": "contextual"}
+
         self.__init_nod_values__()
+
+    def __init_pos__(self):
+        self.ALRobotPosture.goToPosture("StandInit", 0.5)
 
     def __init_pepper_services__(self):
         self.ALAnimatedSpeech = ALAnimatedSpeech(self.session)
@@ -273,7 +278,8 @@ class Robot(object):
         text = self.translator.translate()
         # more natural when the robot waits shortly
         time.sleep(2)
-        self.ALTextToSpeech.say(text)
+        self.ALAnimatedSpeech.say2(text, self.config_contextual_speech)
+        self.__init_pos__()
 
     def start_interpreting(self):
         ListenOnHeadTouch(self.ALMemory,
