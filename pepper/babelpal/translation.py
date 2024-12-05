@@ -48,7 +48,7 @@ class TranslationMock(TranslationInterface):
         return "TranslationMock: I am translating now."
 
 if __name__ == "__main__":
-    from robot import PepperConfiguration, Robot
+    from interpreting_robot import PepperConfiguration, Robot
 
     translator = TranslationFactory.get_translation_service()
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from naoqi import qi
 
+from babelpal.listen_on_head_touch import ListenOnHeadTouch
 from babelpal.translation import TranslationFactory
 from naoqi_python_wrapper.ALAnimatedSpeech import ALAnimatedSpeech
 from naoqi_python_wrapper.ALAudioDevice import ALAudioDevice
@@ -231,3 +232,7 @@ class Robot(object):
         print("Stopped listening!")
         text = self.translator.translate()
         self.ALTextToSpeech.say(text)
+
+    def start_interpreting(self):
+        ListenOnHeadTouch(self, self.listen, self.translate)
+

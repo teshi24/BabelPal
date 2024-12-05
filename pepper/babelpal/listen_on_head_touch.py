@@ -1,7 +1,5 @@
 # -*- encoding: UTF-8 -*-
 import functools
-from robot import PepperConfiguration, Robot
-
 
 class ListenOnHeadTouch(object):
     """ Listens on HeadTouch - first touch triggers on_listen, second touch on_stop
@@ -41,6 +39,7 @@ class ListenOnHeadTouch(object):
         self.id = self.touch.signal.connect(functools.partial(self.onTouched, "TouchChanged"))
 
 if __name__ == "__main__":
+    from interpreting_robot import PepperConfiguration, Robot
     config = PepperConfiguration("Pale")
     pepper = Robot(config)
 

@@ -1,8 +1,6 @@
-from babelpal.listen_on_head_touch import ListenOnHeadTouch
-from robot import PepperConfiguration, Robot
+from interpreting_robot import PepperConfiguration, Robot
 
 config = PepperConfiguration("Pale")
 pepper = Robot(config)
-
-ListenOnHeadTouch(pepper, pepper.listen, pepper.translate)
+pepper.start_interpreting()
 pepper.app.run()
