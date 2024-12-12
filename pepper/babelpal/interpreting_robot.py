@@ -2,7 +2,6 @@
 import random
 import threading
 import time
-import math
 
 from naoqi import qi
 
@@ -98,6 +97,7 @@ from naoqi_python_wrapper.DCM import DCM
 # Author: Sammy Pfeiffer <Sammy.Pfeiffer at student.uts.edu>
 # and updated by Florian Herzog
 
+# EDIT: The interpretion functionality has been added by Patrizia Schoepfer and Nadja Stadelmann
 
 
 class PepperConfiguration(object):
@@ -259,7 +259,7 @@ class Robot(object):
     def listen(self):
         self.translator.listen()
         threading.Thread(target=self._head_listening_movement).start()
-        # without it, this function exits to fast, touch has issues
+        # required to wait shortly so that thread can start safely without interference of the rest of the code
         time.sleep(1)
 
     def _head_listening_movement(self):
@@ -268,36 +268,27 @@ class Robot(object):
         self.ALMotion.setIdlePostureEnabled('Head', False)
 
         self._look_at_speaker()
-        self._nod()
+        while self.get_is_listening_thread_save():
+            self._nod()
 
     def _look_at_speaker(self):
-        print('looking at speaker started')
         self.ALSoundLocalization.subscribe2("SoundLocalization")
 
-        """Make Pepper look and slightly turn towards the person speaking."""
         while self.get_is_listening_thread_save():
             direction = self._get_sound_direction()
-            print(direction)
             if direction:
-                print('entered here')
-                azimuth, elevation = direction  # Get azimuth (angle in radians)
-                # Convert the azimuth to a range that Pepper's head can handle
+                azimuth, elevation = direction  # azimuth = angle in radians
                 self._turn_head_towards(azimuth, elevation)
                 break
+            time.sleep(1)
 
-            time.sleep(1)  # Check every second
-
-        """Stop sound localization when done."""
         self.ALSoundLocalization.unsubscribe("SoundLocalization")
 
     def _get_sound_direction(self):
-        """Get the sound direction from ALSoundLocalization."""
         try:
             data = self.ALMemory.getData("ALSoundLocalization/SoundLocated")
-            print(data)
             if data:
                 azimuth, elevation, confidence, energy = data[1]
-                print(str(confidence) + " (conf), " + str(energy) + " (energy)")
                 if confidence > 0.35 and energy > 0.1:  # Set a threshold for intensity
                     return [azimuth, elevation]
                 else:
@@ -309,20 +300,16 @@ class Robot(object):
             return None
 
     def _get_current_azimuth(self):
-        """Get the current azimuth (yaw) angle of Pepper's head."""
         try:
             # Get the current angles of the head (yaw and pitch)
             head_angles = self.ALMotion.getAngles("Head", True)
-            # head_angles[0] corresponds to the yaw (azimuth) angle
-            print(head_angles)
-            azimuth = head_angles[0]
-            return azimuth
+            # return yaw angle (azimuth)
+            return head_angles[0]
         except Exception as e:
             print("Error getting current azimuth:", e)
             return None
 
     def look_in_opposite_direction(self):
-        """Make Pepper look in the opposite direction (180 degrees from current yaw)."""
         current_azimuth = self._get_current_azimuth()
 
         if current_azimuth is not None:
@@ -332,7 +319,6 @@ class Robot(object):
             print("Unable to retrieve current azimuth.")
 
     def _turn_head_towards(self, azimuth, elevation):
-        """Turn Pepper's head towards the given azimuth and elevation."""
         if azimuth is None or elevation is None:
             return
 
@@ -356,16 +342,13 @@ class Robot(object):
         self.ALMotion.angleInterpolationWithSpeed(head_name, [azimuth, elevation], duration)
 
     def _nod(self):
-        # todo: unsure if this needs to be done here or can be done somewhere else
-        while self.get_is_listening_thread_save():
-            time.sleep(random.randint(2, 4))
-            self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_bottom, self.nod_duration, self.angle_absolute)
-            self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_top, self.nod_duration, self.angle_absolute)
+        time.sleep(random.randint(2, 4))
+        self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_bottom, self.nod_duration, self.angle_absolute)
+        self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_top, self.nod_duration, self.angle_absolute)
 
     def translate(self):
-        # todo: check how this is with the url service
         text = self.translator.translate()
-        # more natural when the robot waits shortly
+        # it is more natural when the robot waits shortly before talking
         time.sleep(2)
         self.look_in_opposite_direction()
         self.ALAnimatedSpeech.say2(text, self.config_contextual_speech)

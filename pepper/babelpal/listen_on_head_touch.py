@@ -23,8 +23,7 @@ class ListenOnHeadTouch(object):
         return self.touch.signal.connect(functools.partial(self._on_touched, "TouchChanged"))
 
     def _on_touched(self, strVarName, value):
-        # Disconnect to the event when talking,
-        # to avoid repetitions
+        # Disconnect to the event when listening, to avoid repetitions
         self.touch.signal.disconnect(self.id)
 
         for sensor in value:
