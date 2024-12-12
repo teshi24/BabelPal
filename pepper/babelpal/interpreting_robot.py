@@ -112,10 +112,10 @@ class PepperConfiguration(object):
         self.Name = name
         self.Username = "nao"
         self.Port = port
-        #if name== PepperNames.Amber:
-        #    self.Ip = "192.168.1.101"
-        #    self.Password = "i1-p2e3p"
-        if "Pale" in str(name):
+        if "Amber" in str(name):
+           self.Ip = "192.168.1.159"
+           self.Password = "i1-p2e3p"
+        elif "Pale" in str(name):
             self.Ip = "192.168.1.181"
             self.Password = "i3-p2e3p"
         elif "Ale" in str(name):
@@ -145,6 +145,8 @@ class Robot(object):
         if self.ALAutonomousLife.getState() != "disabled":
             self.ALAutonomousLife.setState("disabled")
         self.__init_pos__()
+        self.ALTextToSpeech.setVolume(0.3)
+        self.ALTextToSpeech.setLanguage('English')
 
         self.translator = TranslationFactory.get_translation_service()
         self.__is_listening_lock__ = threading.Lock()
@@ -351,14 +353,24 @@ class Robot(object):
         self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_top, self.nod_duration, self.angle_absolute)
 
     def translate(self):
+        self.setLanguage(self.tablet.to_language)
         text = self.translator.translate(self.tablet.to_language)
-        # it is more natural when the robot waits shortly before talking
-        time.sleep(2)
+        text = text.decode('unicode-escape')
         self.look_in_opposite_direction()
         self.ALAnimatedSpeech.say2(text, self.config_contextual_speech)
         self.__init_pos__()
         self.tablet.start_onTouch()
         self.tablet.switch_languages()
+
+    def setLanguage(self, language):
+        if language is "german":
+            self.ALTextToSpeech.setLanguage('German')
+        if language is "english":
+            self.ALTextToSpeech.setLanguage('English')
+        if language is "french":
+            self.ALTextToSpeech.setLanguage('French')
+        if language is "spanish":
+            self.ALTextToSpeech.setLanguage('Italian')
 
     def start_interpreting(self):
         ListenOnHeadTouch(self.ALMemory,

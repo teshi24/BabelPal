@@ -1,3 +1,4 @@
+# coding=utf-8
 from cgitb import enable
 
 
@@ -36,6 +37,7 @@ class Tablet:
                     self.to_language = language
                     self.robot.ALTextToSpeech.say("Second Language is " + self.to_language)
                     self.tablet_service.showImage("http://198.18.0.1/apps/babelpal_images/"+ self.from_language + "_" + self.to_language +".png")
+                    self.sayInstructions()
             else:
                 if 500 < x < 750 and 50 < y < 300:
                     self.switch_languages()
@@ -54,6 +56,21 @@ class Tablet:
         self.from_language = None
         self.to_language = None
         self.tablet_service.showImage("http://198.18.0.1/apps/babelpal_images/language_selection.png")
+        self.robot.ALTextToSpeech.setLanguage('English')
+
+    def sayInstructions(self):
+        if self.from_language is "german":
+            self.robot.ALTextToSpeech.setLanguage('German')
+            self.robot.ALTextToSpeech.say("Berühre meinen Kopf bevor und nachdem du sprichst")
+        if self.from_language is "english":
+            self.robot.ALTextToSpeech.setLanguage('English')
+            self.robot.ALTextToSpeech.say("Touch my head before and after you speak")
+        if self.from_language is "french":
+            self.robot.ALTextToSpeech.setLanguage('French')
+            self.robot.ALTextToSpeech.say("Touche ma tête avant et après avoir parlé")
+        if self.from_language is "spanish":
+            self.robot.ALTextToSpeech.setLanguage('Italian')
+            self.robot.ALTextToSpeech.say("Tócame la cabeza antes y después de hablar")
 
     @staticmethod
     def getSelectedLanguage(x, y):
