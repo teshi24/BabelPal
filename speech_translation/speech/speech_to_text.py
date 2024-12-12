@@ -3,7 +3,7 @@ import sys
 
 from google.cloud import speech
 
-from constants import RATE, CHUNK, LANGUAGE_CODE
+from constants import RATE, CHUNK, LANGUAGE_CODE_SPEECH
 from speech.microphone_stream import MicrophoneStream
 
 
@@ -16,7 +16,7 @@ class SpeechToText:
         self.transcript = ''
         self.transcribing = True
 
-        language_code = LANGUAGE_CODE.get(language)
+        language_code = LANGUAGE_CODE_SPEECH.get(language)
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'google_secret_key.json'
         client = speech.SpeechClient()
         config = speech.RecognitionConfig(
