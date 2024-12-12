@@ -5,7 +5,7 @@ LANGUAGE_CODE_SPEECH = {
   "english": "en-GB",
   "german": "de-DE",
   "spanish": "es-ES",
-  "french": "fr-FR"
+  "french": "fr-CH"
 }
 
 LANGUAGE_CODE_TRANSLATION = {
