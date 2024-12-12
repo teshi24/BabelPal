@@ -6,6 +6,7 @@ import time
 from naoqi import qi
 
 from babelpal.listen_on_head_touch import ListenOnHeadTouch
+from babelpal.tablet import Tablet
 from babelpal.translation import TranslationFactory
 from naoqi_python_wrapper.ALAnimatedSpeech import ALAnimatedSpeech
 from naoqi_python_wrapper.ALAudioDevice import ALAudioDevice
@@ -152,6 +153,8 @@ class Robot(object):
 
         self.__init_nod_values__()
 
+        self.tablet = Tablet(self)
+
     def __init_pos__(self):
         self.ALRobotPosture.goToPosture("StandInit", 0.5)
 
@@ -257,7 +260,8 @@ class Robot(object):
             return self.__is_listening__
 
     def listen(self):
-        self.translator.listen()
+        self.tablet.stop_onTouch()
+        self.translator.listen(self.tablet.from_language)
         threading.Thread(target=self._head_listening_movement).start()
         # required to wait shortly so that thread can start safely without interference of the rest of the code
         time.sleep(1)
@@ -347,12 +351,14 @@ class Robot(object):
         self.ALMotion.angleInterpolation(self.nod_names, self.nod_angle_top, self.nod_duration, self.angle_absolute)
 
     def translate(self):
-        text = self.translator.translate()
+        text = self.translator.translate(self.tablet.to_language)
         # it is more natural when the robot waits shortly before talking
         time.sleep(2)
         self.look_in_opposite_direction()
         self.ALAnimatedSpeech.say2(text, self.config_contextual_speech)
         self.__init_pos__()
+        self.tablet.start_onTouch()
+        self.tablet.switch_languages()
 
     def start_interpreting(self):
         ListenOnHeadTouch(self.ALMemory,
