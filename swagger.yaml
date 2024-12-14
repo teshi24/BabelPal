@@ -1,0 +1,52 @@
+openapi: 3.0.3
+info:
+  title: Speech Translation API
+  description: |-
+    This API provides endpoints to start a speech-to-text conversion via the internal microphone and receive a translated text once the stop endpoint is called.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /start:
+    get:
+      summary: Start the recording for speech-to-text
+      parameters:
+        - name: language
+          in: query
+          description: Language which is spoken
+          required: true
+          schema:
+            type: string
+            default: german
+            enum:
+              - german
+              - english
+              - spanish
+              - french
+      responses:
+        '200':
+          description: Successfully started the speech-to-text
+  /stop:
+    get:
+      summary: Stop the speech-to-text and return the text translated into the provided language
+      parameters:
+        - name: language
+          in: query
+          description: Language the recorded text should be translated into
+          required: true
+          schema:
+            type: string
+            default: german
+            enum:
+              - german
+              - english
+              - spanish
+              - french
+      responses:
+        '200':
+          description: successful stop and translated 
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "This is the text which was recorded, parsed and translated to the language provided in the query parameter"
