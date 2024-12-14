@@ -66,7 +66,7 @@ Für die Umsetzung der Tablet Inputs wurde eine Pixelbasierete Variante gewählt
 Einmal für die Startauswahl:  
   <img src="img/language_selection.png" width="400">
    
-Und jeweils für jede Sprachkombination, zum Beispiel Deutsch --> Spanisch:
+Und jeweils für jede Sprachkombination, zum Beispiel Deutsch --> Spanisch:  
  <img src="img/german_spanish.png" width="400">
 
  Danach wird über die Koordinaten X / Y festgelegt, ob eine Fläche berührt worden ist oder nicht:
