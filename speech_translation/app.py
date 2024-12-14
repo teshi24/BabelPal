@@ -16,7 +16,7 @@ def create_app():
 
     # create and configure the app
     app = SpeechApp('speech_app')
-
+    app.config['JSON_AS_ASCII'] = False
     return app
 
 
